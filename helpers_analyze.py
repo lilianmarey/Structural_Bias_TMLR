@@ -351,29 +351,6 @@ def save_regression_results(df_results, save_folder, models=list(EMBEDDING_MODEL
                             X, y, test_size=0.2, random_state=13
                         )
 
-                        reg_model = Ridge()
-                        reg_model.fit(X_train, y_train)
-                        train_R2 = reg_model.score(X_train, y_train)
-                        test_R2 = reg_model.score(X_test, y_test)
-                        train_RMSE = root_mean_squared_error(
-                            reg_model.predict(X_train), y_train
-                        )
-                        test_RMSE = root_mean_squared_error(
-                            reg_model.predict(X_test), y_test
-                        )
-                        reg_results.append(
-                            [
-                                "ridge",
-                                metric,
-                                run,
-                                name,
-                                train_R2,
-                                test_R2,
-                                train_RMSE,
-                                test_RMSE,
-                            ]
-                        )
-
                         reg_model = RandomForestRegressor()
                         reg_model.fit(X_train, y_train.ravel())
                         train_R2 = reg_model.score(X_train, y_train.ravel())

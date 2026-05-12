@@ -13,6 +13,7 @@ from tqdm import tqdm
 
 
 def N2V_embedding(G, d):
+    print("Running N2V")
     nodes = list(G.nodes())
     n2v_model = Node2Vec(
         G,
@@ -31,26 +32,12 @@ def N2V_embedding(G, d):
 
 
 def SVD_embedding(G, d=32):
+    print("Running SVD")
     nodes = list(G.nodes())
     L = nx.normalized_laplacian_matrix(G).toarray()
     L_shifted = L - L.min() + 1e-6
     svd_model = TruncatedSVD(n_components=d, random_state=13)
     W = svd_model.fit_transform(L_shifted)
-    W_normalized = normalize(W)
-
-    return {node: W_normalized[i].tolist() for i, node in enumerate(nodes)}
-
-
-################################################################################
-
-
-def NMF_embedding(G, d):
-    nodes = list(G.nodes())
-
-    L = nx.normalized_laplacian_matrix(G).toarray()
-    L_shifted = L - L.min() + 1e-6
-    nmf_model = NMF(n_components=d, init="random", random_state=13, max_iter=10000)
-    W = nmf_model.fit_transform(L_shifted)
     W_normalized = normalize(W)
 
     return {node: W_normalized[i].tolist() for i, node in enumerate(nodes)}
@@ -131,6 +118,7 @@ def train_gcn(
 
 
 def GCN_embedding(G, d, device="cpu"):
+    print("Running GCN")
     nodes = list(G.nodes())
     node_idx = {n: i for i, n in enumerate(nodes)}
 

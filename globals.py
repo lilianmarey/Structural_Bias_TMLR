@@ -23,9 +23,8 @@ FAIRNESS_METRICS = [
 ] 
 
 EMBEDDING_MODELS = {
-    "n2v": N2V_embedding,
-    "svd": SVD_embedding,
-    "nmf": NMF_embedding,
+    "N2V": N2V_embedding,
+    "SVD": SVD_embedding,
     "GCN": GCN_embedding,
 }
 

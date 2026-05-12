@@ -1,5 +1,5 @@
 """
-Script for computing and saving graph generation, graph bias, nmf, svd and n2v embeddings, and top-k recommendation results.
+Script for computing and saving graph generation, graph bias, GCN, SVD and N2V embeddings, and top-k recommendation results.
 
 split_seed : seed to use for splitting train and test edges
 
@@ -14,6 +14,7 @@ folder_name : name of the folder where results are saved
 """
 
 import os
+os.environ["PYTHONWARNINGS"] = "ignore"
 from helpers import (
     make_parameter_grid,
     split_graph,
@@ -24,6 +25,8 @@ from embedding_computer import compute_node_embeddings
 from graph_generator import generator
 from bias_measures import Bias
 from joblib import Parallel, delayed
+from tqdm import tqdm
+from tqdm_joblib import tqdm_joblib
 
 from globals import *
 
@@ -83,4 +86,7 @@ for usecase in USECASES:
             (parameter, usecase, top_folder, run, test_size, split_seed)
             for parameter in parameter_grid
         ]
-        Parallel(n_jobs=-1)(delayed(f)(arg) for arg in args_list)
+        with tqdm_joblib(tqdm(desc="Processing", total=len(args_list))):
+            results = Parallel(n_jobs=-1)(
+                delayed(f)(arg) for arg in args_list
+            )

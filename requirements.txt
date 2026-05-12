@@ -81,3 +81,4 @@ wcwidth==0.6.0
 wrapt==2.1.2
 xxhash==3.7.0
 yarl==1.23.0
+tqdm_joblib

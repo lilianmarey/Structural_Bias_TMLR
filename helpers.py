@@ -78,7 +78,7 @@ def compute_topk_reco(embeddings, G, max_k=50):
         top_k_recommendations[node] = [
             node_ids[idx]
             for idx in top_k_indices
-            # We exclude from recommendation the node for which we recommend items and its neighbors in G_train (links already exist)
+
             if not (frozenset((node, node_ids[idx])) in train_edge_set) and idx != i
         ][:max_k]
     return top_k_recommendations
@@ -182,66 +182,3 @@ def compute_pred_metrics(G, reco, test_edges, topk):
     }
 
     return result
-
-
-def markover(G):
-    """
-    Converts an undirected, unweighted graph to a directed, weighted graph
-    where the out-degree sums to 1 for all nodes. Also retains the node attributes.
-
-    Parameters:
-        G (nx.Graph): An undirected, unweighted NetworkX graph.
-
-    Returns:
-        nx.DiGraph: A directed, weighted graph with normalized transition probabilities.
-    """
-    DG = nx.DiGraph()
-
-    for node, data in G.nodes(data=True):
-        DG.add_node(node, **data)
-
-    for node in G.nodes():
-        neighbors = list(G.neighbors(node))
-        num_neighbors = len(neighbors)
-
-        if num_neighbors > 0:
-            weight = 1 / num_neighbors
-            for neighbor in neighbors:
-                DG.add_edge(node, neighbor, weight=weight)
-        else:
-            DG.add_edge(node, node, weight=1)
-
-    return DG
-
-
-def fairwalker(G):
-    sensitive_attribute_dict = dict(
-        [
-            (node_id, attributes["sensitive"])
-            for node_id, attributes in list(G.nodes(data=True))
-        ]
-    )
-    fairwalk_G = G.copy()
-
-    for u in fairwalk_G.nodes:
-        neighbors = list(fairwalk_G.neighbors(u))
-        if len(neighbors) == 0:
-            fairwalk_G.add_edge(u, u, weight=1)
-        else:
-            neighbors_sensitive_attributes = [
-                sensitive_attribute_dict[v] for v in neighbors
-            ]
-            len_accessible_sensitive_attribute = len(
-                set(neighbors_sensitive_attributes)
-            )
-            neighbors_sensitive_attributes_counter = Counter(
-                neighbors_sensitive_attributes
-            )
-            for v in neighbors:
-                fairwalk_G[u][v]["weight"] = (
-                    len_accessible_sensitive_attribute
-                    * neighbors_sensitive_attributes_counter[
-                        sensitive_attribute_dict[v]
-                    ]
-                ) ** -1
-    return fairwalk_G

@@ -1,12 +1,14 @@
+import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 import seaborn as sns
 import pandas as pd
-from matplotlib.colors import LinearSegmentedColormap
 from globals import *
-import numpy as np
-
+from matplotlib.colors import LinearSegmentedColormap
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestRegressor
+from sklearn.metrics import root_mean_squared_error
 
 def plot_real_graph(G, save=None):
 
@@ -37,7 +39,6 @@ def plot_graph_grid(graphs_dict, figsize_per_plot=(4, 4)):
         figsize=(figsize_per_plot[0] * n_beta, figsize_per_plot[1] * n_alpha),
     )
 
-    # handle edge cases
     if n_alpha == 1:
         axes = axes[None, :]
     if n_beta == 1:
@@ -66,11 +67,9 @@ def plot_graph_grid(graphs_dict, figsize_per_plot=(4, 4)):
             ax.set_xticks([])
             ax.set_yticks([])
 
-            # column titles
             if i == 0:
                 ax.set_title(rf"$\beta={beta}$", fontsize=10)
 
-            # row labels
             if j == 0:
                 ax.set_ylabel(rf"$\alpha={alpha}$", fontsize=10)
 
@@ -110,18 +109,11 @@ def show_heatmaps(df, metrics):
         ax.set_title(metric)
         ax.set_xlabel(r"$\beta$")
         ax.set_ylabel(r"$\alpha$")
-    # remove empty subplots
     for j in range(i + 1, len(axes)):
         fig.delaxes(axes[j])
 
     plt.tight_layout()
     plt.show()
-
-
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestRegressor
-from sklearn.metrics import root_mean_squared_error
-
 
 def regression_results(df, metric):
     df_reg = []

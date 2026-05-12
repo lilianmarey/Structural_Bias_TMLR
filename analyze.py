@@ -5,7 +5,7 @@ from helpers_analyze import *
 
 #####################################################################################
 
-folder_name = "final"
+folder_name = "test"
 
 #####################################################################################
 
@@ -13,11 +13,13 @@ folder = f"results/{folder_name}"
 save_folder = f"analysis/{folder_name}"
 os.makedirs(save_folder, exist_ok=True)
 
-df_results = results_summary_dataframes(folder)
-# df_results = {
-#     usecase: pd.read_csv(f"analysis/final/{usecase}/results.csv")
-#     for usecase in USECASES
-# }
+try:
+    df_results = {
+    usecase: pd.read_csv(f"analysis/{folder_name}/{usecase}/results.csv")
+    for usecase in USECASES
+}
+except:
+    df_results = results_summary_dataframes(folder)
 
 def process_usecase(usecase, df, save_folder):
     usecase_folder = f"{save_folder}/{usecase}"
