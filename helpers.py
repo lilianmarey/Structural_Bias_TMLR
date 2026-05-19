@@ -8,6 +8,10 @@ from itertools import product
 from sklearn.model_selection import train_test_split
 from sklearn.metrics.pairwise import cosine_similarity
 
+from node2vec import Node2Vec
+import pandas as pd 
+from tqdm import tqdm
+from bias_measures import Bias
 
 def make_parameter_grid(usecase, n_parameter_sample):
 
@@ -182,3 +186,115 @@ def compute_pred_metrics(G, reco, test_edges, topk):
     }
 
     return result
+
+def markover(G):
+    """
+    Converts an undirected, unweighted graph to a directed, weighted graph
+    where the out-degree sums to 1 for all nodes. Also retains the node attributes.
+    """
+    DG = nx.DiGraph()
+
+    for node, data in G.nodes(data=True):
+        DG.add_node(node, **data)
+
+    for node in G.nodes():
+        neighbors = list(G.neighbors(node))
+        num_neighbors = len(neighbors)
+
+        if num_neighbors > 0:
+            weight = 1 / num_neighbors
+            for neighbor in neighbors:
+                DG.add_edge(node, neighbor, weight=weight)
+        else:
+            DG.add_edge(node, node, weight=1)
+
+    return DG
+
+def fairwalker(G):
+    sensitive_attribute_dict = dict(
+        [
+            (node_id, attributes["sensitive"])
+            for node_id, attributes in list(G.nodes(data=True))
+        ]
+    )
+    fairwalk_G = G.copy()
+
+    for u in fairwalk_G.nodes:
+        neighbors = list(fairwalk_G.neighbors(u))
+        if len(neighbors) == 0:
+            fairwalk_G.add_edge(u, u, weight=1)
+        else:
+            neighbors_sensitive_attributes = [
+                sensitive_attribute_dict[v] for v in neighbors
+            ]
+            len_accessible_sensitive_attribute = len(
+                set(neighbors_sensitive_attributes)
+            )
+            neighbors_sensitive_attributes_counter = Counter(
+                neighbors_sensitive_attributes
+            )
+            for v in neighbors:
+                fairwalk_G[u][v]["weight"] = (
+                    len_accessible_sensitive_attribute
+                    * neighbors_sensitive_attributes_counter[
+                        sensitive_attribute_dict[v]
+                    ]
+                ) ** -1
+    return fairwalk_G
+
+def n2v_embedding(G, d=64, walk_length=40, num_walks=10, workers=4):
+    model = Node2Vec(
+        G,
+        dimensions=d,
+        walk_length=walk_length,
+        num_walks=num_walks,
+        p=1,
+        q=1,
+        workers=workers,
+        quiet=True,
+    ).fit()
+    return {node: model.wv[str(node)] for node in G.nodes()}
+
+def fairwalk_embedding(G, d=64, walk_length=40, num_walks=10, workers=4):
+    G_fw = fairwalker(markover(G))
+    model = Node2Vec(
+        G_fw,
+        dimensions=d,
+        walk_length=walk_length,
+        num_walks=num_walks,
+        p=2,
+        q=2,
+        workers=workers,
+        quiet=True,
+        weight_key="weight",
+    ).fit()
+    return {node: model.wv[str(node)] for node in G_fw.nodes()}
+
+
+def compute_results(graphs_dict, k):
+    """
+    Compute Node2Vec and FairWalk embeddings, recommendations and metrics for all graphs.
+    """
+    results_n2v = {}
+    results_fw = {}
+
+    for (alpha, beta), G in tqdm(graphs_dict.items()):
+        bias_values = Bias(G).compute_bias_values()
+        G_train, test_edges = split_graph(G)
+
+        emb_n2v = n2v_embedding(G_train)
+        reco_n2v = compute_topk_reco(emb_n2v, G_train)
+        pred_n2v = compute_pred_metrics(G_train, reco_n2v, test_edges, topk=k)
+        results_n2v[(alpha, beta)] = pred_n2v | bias_values
+
+        emb_fw = fairwalk_embedding(G_train)
+        reco_fw = compute_topk_reco(emb_fw, G_train)
+        pred_fw = compute_pred_metrics(G_train, reco_fw, test_edges, topk=k)
+        results_fw[(alpha, beta)] = pred_fw | bias_values
+
+    def _to_df(results):
+        df = pd.DataFrame(results).T.reset_index()
+        df.columns = ["alpha", "beta"] + list(df.columns[2:])
+        return df
+
+    return _to_df(results_n2v), _to_df(results_fw)
