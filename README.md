@@ -13,3 +13,5 @@ For analyzing results and creating figures :
 ```
 python analyze.py
 ```
+# Data
+Datasets can be found at https://zenodo.org/records/20143150
