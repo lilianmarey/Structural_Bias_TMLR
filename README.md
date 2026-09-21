@@ -1,4 +1,8 @@
-This anonymized repository provides Python code to reproduce experiments from the paper "Structural Bias Beyond Homophily: A Controlled Study of Fairness in Link Prediction", submitted to TMLR.
+This repository provides Python code to reproduce experiments from the paper "Structural Bias Beyond Homophily: A Study of Fairness in Link Prediction", accepted at TMLR (2026).
+
+Lilian Marey, Mathilde Perez, Tiphaine Viard, Charlotte Laclau. LTCI / i3, Télécom Paris, Institut Polytechnique de Paris.
+
+OpenReview: https://openreview.net/forum?id=xMQ5v0cxH3
 
 # Abstract
 
